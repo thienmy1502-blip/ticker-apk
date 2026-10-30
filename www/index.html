@@ -199,11 +199,32 @@ let SAVED = ""; try { SAVED = localStorage.getItem("ws_url") || ""; } catch (_) 
 const WS_URL = P.get("url") || SAVED || "ws://localhost:8765";
 $("dot").style.cursor = "pointer"; $("dot").style.padding = "8px"; $("dot").style.backgroundClip = "content-box";
 $("dot").title = "Chạm để đổi địa chỉ server";
-$("dot").onclick = () => {
-  const u = prompt("Địa chỉ server (vd: ws://192.168.1.10:8765)", WS_URL);
-  if (u && u.trim()) { try { localStorage.setItem("ws_url", u.trim()); } catch (_) {} location.reload(); }
-};
-if (window.Capacitor && !SAVED && !P.get("url")) setTimeout(() => $("dot").onclick(), 300);
+function askServer() {
+  if ($("srvmodal")) return;
+  const ov = document.createElement("div"); ov.id = "srvmodal";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px";
+  ov.innerHTML = '<div style="background:#1d1d20;border:1px solid #2c2c31;border-radius:10px;padding:16px;width:100%;max-width:420px;font-size:15px">' +
+    '<div style="margin-bottom:10px;font-weight:600">Địa chỉ server</div>' +
+    '<input id="srvin" type="text" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="ws://192.168.1.25:8765" style="width:100%;padding:12px;font-size:16px;background:#fff;color:#000;border:2px solid #6aa8ff;border-radius:6px">' +
+    '<div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end">' +
+    '<button id="srvno" style="padding:10px 16px;font-size:15px;background:#34343a;color:#fff;border:0;border-radius:6px">Hủy</button>' +
+    '<button id="srvok" style="padding:10px 16px;font-size:15px;background:#22c55e;color:#fff;border:0;border-radius:6px;font-weight:600">Lưu</button></div></div>';
+  document.body.appendChild(ov);
+  const inp = $("srvin"); inp.value = WS_URL; setTimeout(() => { inp.focus(); inp.select(); }, 100);
+  $("srvno").onclick = () => ov.remove();
+  $("srvok").onclick = () => {
+    let u = inp.value.trim(); if (!u) return;
+    if (!/^wss?:\/\//i.test(u)) u = "ws://" + u;
+    if (!/:\d+$/.test(u)) u += ":8765";
+    try { localStorage.setItem("ws_url", u); } catch (_) {}
+    location.reload();
+  };
+}
+const sb = document.createElement("button"); sb.id = "srvbtn"; sb.textContent = "⚙ Server";
+sb.style.cssText = "background:#34343a;color:#fff;border:0;border-radius:4px;padding:6px 10px;font-size:13px";
+sb.onclick = askServer; $("dot").parentNode.insertBefore(sb, $("dot"));
+$("dot").onclick = askServer;
+if (window.Capacitor && !SAVED && !P.get("url")) setTimeout(askServer, 300);
 const TFS = { "1p": 60, "5p": 300, "15p": 900, "1g": 3600, "Ngày": 86400 };
 const OFF = 7 * 3600;                       // hiển thị giờ Việt Nam (UTC+7)
 const UP = "#22c55e", DOWN = "#ef2d4a";
