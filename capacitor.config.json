@@ -1,0 +1,8 @@
+{
+  "appId": "vn.nen.ticker",
+  "appName": "Nến VN30F1M",
+  "webDir": "www",
+  "backgroundColor": "#161618",
+  "server": { "androidScheme": "http", "cleartext": true },
+  "android": { "allowMixedContent": true }
+}

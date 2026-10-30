@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>41I1GB000 - Biểu đồ nến</title>
+<style>
+  :root {
+    --bg: #161618;
+    --panel: #1d1d20;
+    --line: #2c2c31;
+    --text: #ffffff;
+    --muted: #8a8a93;
+    --up: #22c55e;
+    --down: #ef2d4a;
+    --flat: #f5c518;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; display: flex; flex-direction: column; }
+
+  header {
+    flex: none; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .sym { font-size: 17px; font-weight: 700; }
+  .px { display: flex; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+  #price { font-size: 20px; font-weight: 700; }
+  #chg { font-size: 14px; font-weight: 600; }
+  .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--flat); }
+  .spacer { flex: 1; }
+  .tf { display: flex; gap: 2px; }
+  .tf button {
+    background: transparent; color: var(--muted); border: 0; border-radius: 4px;
+    padding: 5px 10px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .tf button:hover { color: var(--text); background: #2a2a2f; }
+  .tf button.on { color: var(--text); background: #34343a; font-weight: 600; }
+  .tf button:focus-visible { outline: 2px solid #6aa8ff; outline-offset: 1px; }
+  #clk { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--up); } .dot.err { background: var(--down); }
+
+  #wrap { position: relative; flex: 1; min-height: 0; display: flex; }
+  #col { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+  #lbls { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; z-index: 4; }
+  .lb { position: absolute; color: #fff; border-radius: 4px; padding: 5px 10px; line-height: 1.35; text-align: center; white-space: pre; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .lb::after { content: ""; position: absolute; border: 6px solid transparent; }
+  .lb.up::after { bottom: 100%; left: 50%; margin-left: -6px; border-bottom-color: var(--c); }
+  .lb.down::after { top: 100%; left: 50%; margin-left: -6px; border-top-color: var(--c); }
+  .lb.left::after { right: 100%; top: 50%; margin-top: -6px; border-right-color: var(--c); }
+  .lb.right::after { left: 100%; top: 50%; margin-top: -6px; border-left-color: var(--c); }
+  #alr { flex: none; width: 320px; display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--panel); border-left: 1px solid var(--line); z-index: 6; overflow-y: auto; font-size: 13px; }
+  #alr[hidden] { display: none; }
+  #alr h4 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 8px; }
+  #alr label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  #alr input[type=text], #alr input[type=number], #alr select { background: #121214; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font: inherit; min-width: 0; }
+  .arow { display: flex; gap: 6px; } .arow input[type=number] { flex: 1; }
+  .ar { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .ar button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; }
+  .muted { color: var(--muted); font-size: 12px; line-height: 1.5; }
+  #alog div { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
+  #toasts { position: fixed; top: 56px; right: 16px; z-index: 50; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { background: #2a2a31; border-left: 4px solid var(--flat); border-radius: 6px; padding: 8px 12px; max-width: 340px; box-shadow: 0 4px 14px rgba(0,0,0,.5); font-size: 13px; line-height: 1.45; white-space: pre-wrap; animation: tin .2s; }
+  .toast b { display: block; margin-bottom: 2px; }
+  @keyframes tin { from { opacity: 0; transform: translateX(20px); } }
+  #ind { position: absolute; top: 32px; left: 12px; z-index: 6; display: flex; gap: 2px; align-items: center; font-size: 12.5px; background: rgba(22,22,24,.75); padding: 2px 4px 2px 8px; border-radius: 4px; }
+  #ind[hidden] { display: none; } #ind .it.off { opacity: .45; }
+  #ind button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 3px; }
+  #ind button:hover { background: #34343a; color: var(--text); }
+  #dlg { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+  #dlg[hidden] { display: none; }
+  .dbox { width: min(520px, 94vw); max-height: 82vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .dhead { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-weight: 700; font-size: 15px; }
+  .dtabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); }
+  .dtabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .dtabs button.on { color: var(--text); border-bottom-color: #2f5fd0; }
+  #dbody { padding: 8px 16px; overflow-y: auto; flex: 1; }
+  #dbody h5 { margin: 14px 0 4px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .drow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 13px; }
+  .drow > span { flex: 1; }
+  .drow input[type=number], .drow input[type=text], .drow select { width: 110px; background: #121214; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: inherit; }
+  .drow input[type=color] { width: 36px; height: 26px; padding: 0; border: 1px solid var(--line); background: none; }
+  .dfoot { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--line); }
+  #rpl { position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%); z-index: 8; display: flex; gap: 6px; align-items: center; background: #25252b; border: 1px solid #3a3a42; border-radius: 8px; padding: 6px 10px; box-shadow: 0 6px 24px rgba(0,0,0,.55); font-size: 13px; }
+  #rpl[hidden] { display: none; }
+  #rpl .tb:disabled { opacity: .4; cursor: default; }
+  #rtag { color: #ef2d4a; font-weight: 700; letter-spacing: .04em; }
+  #rtime { color: var(--muted); min-width: 120px; font-variant-numeric: tabular-nums; }
+  #fp { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 3; }
+  #fp[hidden], #fpRow[hidden], #fpCsv[hidden] { display: none; }
+  #tbls { position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 5; }
+  .tbl { position: absolute; background: rgba(0,0,0,.55); border-radius: 4px; padding: 4px 8px; font-size: 12px; line-height: 1.5; }
+  .tbl td { padding: 0 6px; white-space: pre; }
+  #chart { position: relative; flex: 1; min-height: 0; }
+  #pane { flex: none; height: 200px; border-top: 1px solid var(--line); }
+  #pane[hidden], #pine[hidden] { display: none; }
+  .tb { background: #2a2a2f; color: var(--text); border: 0; border-radius: 4px; padding: 5px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .tb:hover { background: #34343a; } .tb.on { background: #2f5fd0; }
+  #pine { flex: none; width: 380px; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--panel); border-left: 1px solid var(--line); z-index: 6; }
+  #psrc { flex: 1; min-height: 120px; resize: none; background: #121214; color: #e6e6ea; border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: 12.5px/1.5 Consolas, "Courier New", monospace; tab-size: 4; white-space: pre; }
+  #prow { display: flex; gap: 6px; flex-wrap: wrap; }
+  #pmsg { font-size: 12px; color: var(--muted); min-height: 32px; white-space: pre-wrap; }
+  #pmsg.err { color: var(--down); } #pmsg.ok { color: var(--up); }
+  #legend {
+    position: absolute; top: 8px; left: 12px; z-index: 5; pointer-events: none;
+    font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  #legend b { font-weight: 600; margin-left: 3px; }
+  #empty {
+    position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; color: var(--muted); font-size: 14px; line-height: 1.6; pointer-events: none;
+  }
+  #empty[hidden] { display: none; }
+</style>
+</head>
+<body style="padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)">
+<header>
+  <div class="sym" id="sym">41I1GB000</div>
+  <div class="px"><span id="price">--</span><span id="chg"></span></div>
+  <div class="spacer"></div>
+  <div class="tf" id="tf"></div>
+  <button class="tb" id="fpBtn" title="Footprint: khối lượng mua/bán theo từng mức giá (ước lượng)">Footprint</button>
+  <button class="tb" id="fpCsv" hidden title="Tải footprint (khung và cỡ hàng đang xem) ra CSV">⬇ FP</button>
+  <select class="tb" id="fpRow" hidden title="Kích thước 1 hàng giá (điểm)"><option value="0.1">0.1</option><option value="0.2">0.2</option><option value="0.5" selected>0.5</option><option value="1">1.0</option><option value="2">2.0</option></select>
+  <button class="tb" id="rplBtn" title="Phát lại nến trong quá khứ (Bar Replay)">⏪ Replay</button>
+  <button class="tb" id="csvBtn" title="Tải dữ liệu khung đang xem ra CSV">⬇ CSV</button>
+  <button class="tb" id="alrBtn" title="Cảnh báo">🔔</button>
+  <button class="tb" id="pineBtn">Pine</button>
+  <span id="clk">--:--:--</span>
+  <span class="dot" id="dot" title="Trạng thái kết nối"></span>
+</header>
+<div id="wrap">
+  <div id="col"><div id="chart"></div><div id="pane" hidden></div><canvas id="fp" hidden></canvas><div id="lbls"></div><div id="tbls"></div></div>
+  <aside id="pine" hidden>
+    <textarea id="psrc" spellcheck="false" placeholder="Dán code Pine vào đây (Ctrl+Enter để chạy)"></textarea>
+    <div id="prow">
+      <button class="tb on" id="prun">▶ Chạy</button>
+      <button class="tb" id="pclr">Gỡ</button>
+      <select class="tb" id="plib"><option value="">Thư viện…</option></select>
+      <button class="tb" id="ppm">PM-VT V7</button>
+      <button class="tb" id="pema">Mẫu EMA</button>
+      <button class="tb" id="prsi">Mẫu RSI</button>
+    </div>
+    <div id="pmsg">Hỗ trợ tập con Pine v5 (hàm tự định nghĩa, array, label, line, table...). Chưa hỗ trợ strategy.*.</div>
+  </aside>
+  <aside id="alr" hidden>
+    <h4>Cảnh báo giá</h4>
+    <div class="arow"><select id="apDir"><option value="up">Cắt lên</option><option value="down">Cắt xuống</option></select>
+      <input id="apPx" type="number" step="0.1" placeholder="Mức giá"><button class="tb" id="apNow" title="Lấy giá hiện tại">≈</button><button class="tb on" id="apAdd">Thêm</button></div>
+    <label><input type="checkbox" id="apOnce" checked> Chỉ báo 1 lần rồi xóa</label>
+    <div id="aplist"></div>
+    <h4>Chỉ báo / chiến lược (code Pine)</h4>
+    <label><input type="checkbox" id="aPine" checked> Bật cảnh báo từ code Pine</label>
+    <div id="adefs" class="muted">Chạy code Pine có alertcondition(...), alert(...) hoặc strategy.entry(...) để các cảnh báo hiện ở đây.</div>
+    <h4>Cách nhận</h4>
+    <label><input type="checkbox" id="aSound"> Âm thanh</label>
+    <label><input type="checkbox" id="aNotif"> Thông báo trình duyệt</label>
+    <label><input type="checkbox" id="aTg"> Telegram</label>
+    <div class="arow"><input type="text" id="aTok" placeholder="Bot token"><input type="text" id="aChat" placeholder="Chat ID" style="width:90px"></div>
+    <button class="tb" id="aTest">Gửi thử</button>
+    <h4>Lịch sử</h4><div id="alog" class="muted">Chưa có cảnh báo nào.</div>
+  </aside>
+  <div id="rpl" hidden>
+    <span id="rtag">⏪ REPLAY</span>
+    <button class="tb" id="rsel">Chọn điểm bắt đầu</button>
+    <button class="tb on" id="rplay" disabled title="Phát / tạm dừng">▶</button>
+    <button class="tb" id="rstep" disabled title="Tiến 1 nến (phím →)">⏭ +1 nến</button>
+    <select class="tb" id="rspd" title="Tốc độ (nến/giây)"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="5">5x</option><option value="10">10x</option><option value="30">30x</option></select>
+    <span id="rtime"></span>
+    <button class="tb" id="rexit">✕ Thoát</button>
+  </div>
+  <div id="ind" hidden></div>
+  <div id="legend"></div>
+  <div id="empty">Chưa có dữ liệu nến.<br>Kéo file CSV lịch sử thả lên nap.bat để nạp,<br>hoặc để server chạy trong giờ giao dịch để tự tích lũy nến 1 phút.</div>
+</div>
+
+<script src="pine.js"></script>
+<script src="pm-vt.js"></script>
+<script src="pine-lib.js"></script>
+<script src="lightweight-charts.js"></script>
+<div id="toasts"></div>
+<div id="dlg" hidden><div class="dbox">
+  <div class="dhead"><span id="dtitle">Cài đặt</span><button class="tb" id="dclose">✕</button></div>
+  <div class="dtabs"><button data-tab="in" class="on">Đầu vào</button><button data-tab="st">Kiểu dáng</button></div>
+  <div id="dbody"></div>
+  <div class="dfoot"><button class="tb" id="dreset">Đặt lại mặc định</button><button class="tb on" id="dok">Xong</button></div>
+</div></div>
+<script>
+/* Dữ liệu: ticker_server.py (WebSocket) gửi
+   - {"type":"history","candles":[[t,o,h,l,c,v],...]}  nến 1 phút đã lưu
+   - {"type":"candle","c":[t,o,h,l,c,v]}               nến 1 phút đang chạy
+   - {"price":..,"ref":..,...}                         giá hiện tại
+   Mở: chart-nen.html?url=ws://localhost:8765&tf=5p */
+const $ = id => document.getElementById(id);
+const P = new URLSearchParams(location.search);
+let SAVED = ""; try { SAVED = localStorage.getItem("ws_url") || ""; } catch (_) {}
+const WS_URL = P.get("url") || SAVED || "ws://localhost:8765";
+$("dot").style.cursor = "pointer"; $("dot").style.padding = "8px"; $("dot").style.backgroundClip = "content-box";
+$("dot").title = "Chạm để đổi địa chỉ server";
+$("dot").onclick = () => {
+  const u = prompt("Địa chỉ server (vd: ws://192.168.1.10:8765)", WS_URL);
+  if (u && u.trim()) { try { localStorage.setItem("ws_url", u.trim()); } catch (_) {} location.reload(); }
+};
+if (window.Capacitor && !SAVED && !P.get("url")) setTimeout(() => $("dot").onclick(), 300);
+const TFS = { "1p": 60, "5p": 300, "15p": 900, "1g": 3600, "Ngày": 86400 };
+const OFF = 7 * 3600;                       // hiển thị giờ Việt Nam (UTC+7)
+const UP = "#22c55e", DOWN = "#ef2d4a";
+const fmt = (n, d = 1) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmt2 = n => fmt(n, 2);
+
+let tfName = P.get("tf");
+try { tfName = tfName || localStorage.getItem("tf"); } catch (_) {}
+if (!TFS[tfName]) tfName = "1p";
+
+/* ---------- biểu đồ ---------- */
+const chart = LightweightCharts.createChart($("chart"), {
+  layout: { background: { type: "solid", color: "#161618" }, textColor: "#8a8a93", fontFamily: "-apple-system, 'Segoe UI', Roboto, Arial, sans-serif" },
+  grid: { vertLines: { color: "#212125" }, horzLines: { color: "#212125" } },
+  crosshair: { mode: 0 },
+  rightPriceScale: { borderColor: "#2c2c31", scaleMargins: { top: 0.08, bottom: 0.24 } },
+  timeScale: { borderColor: "#2c2c31", timeVisible: true, secondsVisible: false, rightOffset: 6 },
+  localization: { locale: "vi-VN" },
+});
+const cs = chart.addCandlestickSeries({
+  upColor: UP, downColor: DOWN, borderUpColor: UP, borderDownColor: DOWN, wickUpColor: UP, wickDownColor: DOWN,
+  priceFormat: { type: "price", precision: 1, minMove: 0.1 },
+});
+const vs = chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "vol", lastValueVisible: false, priceLineVisible: false });
+chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+
+const wrap = $("wrap");
+const fit = () => {
+  const c = $("chart"); chart.resize(c.clientWidth, c.clientHeight);
+  if (pane && !$("pane").hidden) pane.resize($("pane").clientWidth, $("pane").clientHeight);
+};
+let pane = null;
+new ResizeObserver(fit).observe($("chart"));
+fit();
+
+/* ---------- nến ---------- */
+let m1 = [], full = m1, replayOn = false;     // nến 1 phút: {t,o,h,l,c,v}
+let bars = [];   // nến theo khung đang chọn: {time,open,high,low,close,vol}
+let hovering = false;
+const bucket = (t, tf) => Math.floor((t + OFF) / tf) * tf;
+
+function aggregate() {
+  const tf = TFS[tfName];
+  bars = [];
+  let cur = null;
+  for (const k of m1) {
+    const b = bucket(k.t, tf);
+    if (!cur || cur.time !== b) {
+      cur = { time: b, open: k.o, high: k.h, low: k.l, close: k.c, vol: k.v };
+      bars.push(cur);
+    } else {
+      cur.high = Math.max(cur.high, k.h);
+      cur.low = Math.min(cur.low, k.l);
+      cur.close = k.c;
+      cur.vol += k.v;
+    }
+  }
+}
+const volColor = b => (b.close >= b.open ? "rgba(34,197,94,.45)" : "rgba(239,45,74,.45)");
+const toC = b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close });
+const toV = b => ({ time: b.time, value: b.vol, color: volColor(b) });
+
+function draw(resetView) {
+  chart.applyOptions({ timeScale: { timeVisible: TFS[tfName] < 86400 } });
+  cs.setData(bars.map(toC));
+  vs.setData(bars.map(toV));
+  $("empty").hidden = bars.length > 0;
+  if (resetView && bars.length) {
+    chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, bars.length - 120), to: bars.length + 6 });
+  }
+  updateLegend(bars[bars.length - 1]);
+  schedulePine();
+}
+
+function onCandle(c, force) {
+  const [t, o, h, l, cl, v] = c;
+  const k = { t, o, h, l, c: cl, v };
+  if (replayOn && !force) {            // đang replay: dữ liệu thật chỉ ghi vào kho, không vẽ
+    const lf = full[full.length - 1];
+    if (lf && lf.t === t) full[full.length - 1] = k; else if (!lf || t > lf.t) full.push(k);
+    return;
+  }
+  const last = m1[m1.length - 1];
+  if (last && last.t === t) m1[m1.length - 1] = k;
+  else if (!last || t > last.t) m1.push(k);
+  else return;
+
+  const tf = TFS[tfName], b = bucket(t, tf);
+  let cur = null;
+  for (let i = m1.length - 1; i >= 0 && bucket(m1[i].t, tf) === b; i--) {
+    const x = m1[i];
+    if (!cur) cur = { time: b, open: x.o, high: x.h, low: x.l, close: x.c, vol: x.v };
+    else { cur.open = x.o; cur.high = Math.max(cur.high, x.h); cur.low = Math.min(cur.low, x.l); cur.vol += x.v; }
+  }
+  if (bars.length && bars[bars.length - 1].time === b) bars[bars.length - 1] = cur;
+  else bars.push(cur);
+  cs.update(toC(cur));
+  vs.update(toV(cur));
+  $("empty").hidden = true;
+  if (!hovering) updateLegend(cur);
+  schedulePine();
+}
+
+/* ---------- chú thích O/H/L/C ---------- */
+function updateLegend(b) {
+  const el = $("legend");
+  if (!b) { el.textContent = ""; return; }
+  const cls = b.close > b.open ? "up" : b.close < b.open ? "down" : "flat";
+  const d = b.close - b.open;
+  el.innerHTML =
+    `<span>Mở<b class="${cls}">${fmt(b.open)}</b></span>` +
+    `<span>Cao<b class="${cls}">${fmt(b.high)}</b></span>` +
+    `<span>Thấp<b class="${cls}">${fmt(b.low)}</b></span>` +
+    `<span>Đóng<b class="${cls}">${fmt(b.close)}</b></span>` +
+    `<span class="${cls}">${d > 0 ? "+" : ""}${fmt(d)}</span>` +
+    `<span>KL<b style="color:#fff">${fmt(b.vol ?? 0, 0)}</b></span>`;
+}
+chart.subscribeCrosshairMove(p => {
+  hovering = !!(p && p.time);
+  if (hovering) {
+    const c = p.seriesData.get(cs), v = p.seriesData.get(vs);
+    if (c) updateLegend({ open: c.open, high: c.high, low: c.low, close: c.close, vol: v ? v.value : 0 });
+  } else {
+    updateLegend(bars[bars.length - 1]);
+  }
+});
+
+/* ---------- đầu trang: giá hiện tại ---------- */
+let refLine = null, refVal = null;
+function onTick(d) {
+  const price = +d.price, ref = +d.ref;
+  if (!Number.isFinite(price) || !Number.isFinite(ref)) return;
+  if (d.symbol) $("sym").textContent = d.symbol;
+  const diff = price - ref, pct = ref ? diff / ref * 100 : 0;
+  const cls = diff > 0 ? "up" : diff < 0 ? "down" : "flat", s = diff > 0 ? "+" : "";
+  $("price").textContent = fmt2(price);
+  checkPrice(price);
+  $("price").className = cls;
+  $("chg").className = cls;
+  $("chg").textContent = `${s}${fmt2(diff)} (${s}${fmt2(pct)}%)`;
+  if (ref !== refVal) {
+    if (refLine) cs.removePriceLine(refLine);
+    refLine = cs.createPriceLine({ price: ref, color: "#f5c518", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "TC" });
+    refVal = ref;
+  }
+}
+
+/* ---------- khung thời gian ---------- */
+const tfBox = $("tf");
+for (const name of Object.keys(TFS)) {
+  const btn = document.createElement("button");
+  btn.textContent = name;
+  btn.dataset.tf = name;
+  btn.addEventListener("click", () => {
+    tfName = name;
+    try { localStorage.setItem("tf", name); } catch (_) {}
+    markTf();
+    alrBaseline = true;
+    aggregate();
+    draw(true);
+  });
+  tfBox.append(btn);
+}
+function markTf() { for (const b of tfBox.children) b.classList.toggle("on", b.dataset.tf === tfName); }
+markTf();
+
+/* ---------- đồng hồ ---------- */
+const clock = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Ho_Chi_Minh" });
+const tick = () => { $("clk").textContent = clock.format(new Date()); };
+tick(); setInterval(tick, 1000);
+
+/* ---------- Pine ---------- */
+const SAMPLES = {
+  ema: `//@version=5
+indicator("EMA cross", overlay=true)
+fast = ta.ema(close, 9)
+slow = ta.ema(close, 21)
+plot(fast, "EMA9", color=color.yellow)
+plot(slow, "EMA21", color=color.aqua)
+plotshape(ta.crossover(fast, slow), style=shape.triangleup, location=location.belowbar, color=color.green, text="Mua")
+plotshape(ta.crossunder(fast, slow), style=shape.triangledown, location=location.abovebar, color=color.red, text="Bán")
+`,
+  rsi: `//@version=5
+indicator("RSI 14")
+r = ta.rsi(close, 14)
+plot(r, "RSI", color=color.purple)
+hline(70, "70", color=color.red)
+hline(30, "30", color=color.green)
+`,
+};
+let pineLabels = [], lbEls = [], barColored = false;
+const LB_SIZE = { "size.tiny": 10, "size.small": 11, "size.normal": 13, "size.large": 15, "size.huge": 18 };
+function buildLabels() {
+  const L = $("lbls"); L.innerHTML = "";
+  lbEls = pineLabels.slice(-200).map(l => {
+    const st = /up/.test(l.style) ? "up" : /down/.test(l.style) ? "down" : /left/.test(l.style) ? "left" : /right/.test(l.style) ? "right" : "ctr";
+    const el = document.createElement("div"), c = l.color || "#3b82f6";
+    el.className = "lb " + st; el.textContent = l.text;
+    el.style.setProperty("--c", c); el.style.background = c; el.style.color = l.tc || "#fff";
+    el.style.fontSize = (LB_SIZE[l.size] || 13) + "px";
+    L.append(el); return { el, l, st };
+  });
+}
+function renderLabels() {
+  if (!lbEls.length) return;
+  const L = $("lbls"), ts = chart.timeScale();
+  L.style.width = Math.max(0, $("chart").clientWidth - chart.priceScale("right").width()) + "px";
+  L.style.height = Math.max(0, $("chart").clientHeight - ts.height()) + "px";
+  for (const { el, l, st } of lbEls) {
+    const x = ts.timeToCoordinate(l.t), y = cs.priceToCoordinate(l.y);
+    if (x === null || y === null || !isFinite(y)) { el.style.display = "none"; continue; }
+    el.style.display = "block";
+    const w = el.offsetWidth, h = el.offsetHeight;
+    let left = x - w / 2, top = y - h / 2;
+    if (st === "up") top = y + 7; else if (st === "down") top = y - h - 7;
+    else if (st === "left") left = x + 7; else if (st === "right") left = x - w - 7;
+    el.style.left = left + "px"; el.style.top = top + "px";
+  }
+}
+setInterval(renderLabels, 100);
+let pineOn = false, pineTimer = null, mainSeries = [], paneSeries = [], pineLines = [], syncing = false;
+function ensurePane() {
+  if (pane) return;
+  pane = LightweightCharts.createChart($("pane"), {
+    layout: { background: { type: "solid", color: "#161618" }, textColor: "#8a8a93" },
+    grid: { vertLines: { color: "#212125" }, horzLines: { color: "#212125" } },
+    rightPriceScale: { borderColor: "#2c2c31" },
+    timeScale: { borderColor: "#2c2c31", timeVisible: true, secondsVisible: false, rightOffset: 6 },
+  });
+  chart.timeScale().subscribeVisibleLogicalRangeChange(r => { if (r && !syncing) { syncing = true; pane.timeScale().setVisibleLogicalRange(r); syncing = false; } });
+  pane.timeScale().subscribeVisibleLogicalRangeChange(r => { if (r && !syncing) { syncing = true; chart.timeScale().setVisibleLogicalRange(r); syncing = false; } });
+  new ResizeObserver(fit).observe($("pane"));
+}
+function clearPine() {
+  for (const s of mainSeries) chart.removeSeries(s);
+  if (pane) for (const s of paneSeries) pane.removeSeries(s);
+  for (const l of pineLines) { try { l.s.removePriceLine(l.l); } catch (_) {} }
+  mainSeries = []; paneSeries = []; pineLines = [];
+  cs.setMarkers([]);
+  $("tbls").innerHTML = ""; $("lbls").innerHTML = ""; pineLabels = []; lbEls = [];
+  if (barColored) { cs.setData(bars.map(toC)); barColored = false; }
+}
+const escH = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hashStr = s => { let x = 5381; for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
+const newCfg = () => ({ inputs: {}, styles: {}, show: {}, visible: true });
+let cfg = newCfg(), lastRes = null;
+const cfgKey = () => "pine_cfg_" + hashStr($("psrc").value);
+function loadCfg() { try { cfg = Object.assign(newCfg(), JSON.parse(localStorage.getItem(cfgKey()) || "{}")); } catch (_) { cfg = newCfg(); } }
+function saveCfg() { try { localStorage.setItem(cfgKey(), JSON.stringify(cfg)); } catch (_) {} }
+
+function applyPine() {
+  const msg = $("pmsg");
+  clearPine();
+  if (!cfg.visible) { renderLegend(); return; }
+  if (!bars.length) { $("pane").hidden = true; return; }
+  let r;
+  try { const last = bars[bars.length - 1]; r = Pine.run($("psrc").value, bars, { lastOpen: last.time + TFS[tfName] > Date.now() / 1000 + OFF, inputs: cfg.inputs }); }
+  catch (e) { msg.textContent = e.message; msg.className = "err"; $("pane").hidden = true; fit(); return; }
+  lastRes = r;
+  const on = k => cfg.show[k] !== false;
+  const over = r.meta.overlay;
+  if (!over) { ensurePane(); pane.applyOptions({ timeScale: { timeVisible: TFS[tfName] < 86400 } }); }
+  $("pane").hidden = over;
+  fit();
+  const host = over ? chart : pane, list = over ? mainSeries : paneSeries;
+  for (const p of r.plots) {
+    const st = cfg.styles[p.id] || {};
+    if (st.show === false) continue;
+    const color = st.color || p.color, lw = st.lw || p.lw;
+    const data = st.color ? p.data.map(d => d.value === undefined ? d : { time: d.time, value: d.value }) : p.data;
+    const hist = /histogram|columns/.test(p.style), dots = /circles|cross/.test(p.style);
+    const s = hist
+      ? host.addHistogramSeries({ color, title: p.title, priceLineVisible: false })
+      : host.addLineSeries({ color, lineWidth: Math.max(1, Math.min(4, lw | 0)), title: p.title, priceLineVisible: false, lineVisible: !dots, pointMarkersVisible: dots });
+    s.setData(data); list.push(s);
+  }
+  const hs = list[0] || (over ? cs : null);
+  if (hs) for (const h of r.hlines) pineLines.push({ s: hs, l: hs.createPriceLine({ price: h.price, color: h.color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: String(h.title || "") }) });
+  const tAt = x => { x = Math.max(0, Math.round(x)); return x < bars.length ? bars[x].time : bars[bars.length - 1].time + (x - bars.length + 1) * TFS[tfName]; };
+  if (on("lines")) for (const l of r.lines.slice(-60)) {
+    const a = tAt(l.x1), b = tAt(l.x2);
+    const s = host.addLineSeries({ color: l.color || "#f5c518", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: true });
+    s.setData(a === b ? [{ time: a, value: l.y1 }] : [{ time: a, value: l.y1 }, { time: b, value: l.y2 }]); list.push(s);
+  }
+  pineLabels = on("labels") ? r.labels.map(l => ({ ...l, t: tAt(l.x) })) : [];
+  buildLabels(); renderLabels();
+  cs.setMarkers(on("markers") ? [...r.markers].sort((a, b) => a.time - b.time).map(m => ({ time: m.time, position: m.position, shape: m.shape, color: m.color, text: m.text || "" })) : []);
+  if (on("bg") && r.bg.length) {
+    const s = host.addHistogramSeries({ priceScaleId: "pinebg", priceLineVisible: false, lastValueVisible: false });
+    host.priceScale("pinebg").applyOptions({ scaleMargins: { top: 0, bottom: 0 }, visible: false });
+    const m = new Map(r.bg.map(x => [x.time, x.color]));
+    s.setData(bars.map(x => m.has(x.time) ? { time: x.time, value: 1, color: m.get(x.time) } : { time: x.time })); list.push(s);
+  }
+  if (on("bar") && r.barColors.length) {
+    const m = new Map(r.barColors.map(x => [x.time, x.color]));
+    cs.setData(bars.map(x => { const c = m.get(x.time); return c ? { ...toC(x), color: c, borderColor: c, wickColor: c } : toC(x); }));
+    barColored = true;
+  }
+  const T = $("tbls"); T.innerHTML = ""; T.style.bottom = over ? "0" : "200px";
+  const POS = { top_left: "top:8px;left:8px", top_center: "top:8px;left:50%;transform:translateX(-50%)", top_right: "top:8px;right:64px",
+    middle_left: "top:50%;left:8px", middle_center: "top:50%;left:50%", middle_right: "top:50%;right:64px",
+    bottom_left: "bottom:8px;left:8px", bottom_center: "bottom:8px;left:50%;transform:translateX(-50%)", bottom_right: "bottom:8px;right:64px" };
+  if (on("tables")) for (const t of r.tables) {
+    const rows = {};
+    for (const c of Object.values(t.cells)) (rows[c.row] = rows[c.row] || []).push(c);
+    let html = "";
+    for (const k of Object.keys(rows).sort((a, b) => a - b)) {
+      const cl = rows[k].sort((a, b) => a.col - b.col);
+      if (cl.every(c => !c.text)) continue;
+      html += "<tr>" + cl.map(c => `<td style="color:${c.color || "#fff"}${c.bg ? ";background:" + c.bg : ""}">${escH(c.text)}</td>`).join("") + "</tr>";
+    }
+    if (!html) continue;
+    const d = document.createElement("div"); d.className = "tbl";
+    d.style.cssText = POS[t.pos.replace("position.", "")] || POS.top_right;
+    d.innerHTML = "<table>" + html + "</table>"; T.append(d);
+  }
+  if (!over) { const lr = chart.timeScale().getVisibleLogicalRange(); if (lr) pane.timeScale().setVisibleLogicalRange(lr); }
+  handleAlerts(r);
+  renderLegend();
+  msg.className = "ok";
+  msg.textContent = `Đã chạy "${r.meta.title}": ${r.plots.length} đường, ${r.markers.length} tín hiệu, ${bars.length} nến`;
+}
+
+/* ---------- thanh chỉ báo + hộp cài đặt (giống TradingView) ---------- */
+function renderLegend() {
+  const el = $("ind");
+  if (!pineOn || !lastRes) { el.hidden = true; return; }
+  const vals = lastRes.inputs.filter(i => i.type === "int" || i.type === "float").slice(0, 4).map(i => i.val);
+  el.hidden = false;
+  el.innerHTML = `<span class="it ${cfg.visible ? "" : "off"}">${escH(lastRes.meta.title)}${vals.length ? " (" + vals.join(", ") + ")" : ""}</span>` +
+    `<button data-a="eye" title="Ẩn/hiện">${cfg.visible ? "👁" : "🚫"}</button><button data-a="set" title="Cài đặt">⚙</button><button data-a="del" title="Gỡ chỉ báo">✕</button>`;
+}
+$("ind").addEventListener("click", e => {
+  const a = e.target.dataset && e.target.dataset.a;
+  if (a === "eye") { cfg.visible = !cfg.visible; saveCfg(); applyPine(); renderLegend(); }
+  else if (a === "set") { dlgTab = "in"; openDlg(); }
+  else if (a === "del") $("pclr").click();
+});
+const toHex = c => {
+  if (/^#[0-9a-f]{6}/i.test(c)) return c.slice(0, 7);
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || "");
+  return m ? "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join("") : "#6aa8ff";
+};
+let dlgTab = "in", rerunT = null;
+function openDlg() { if (!lastRes) return; renderDlg(); $("dlg").hidden = false; }
+function renderDlg() {
+  const r = lastRes; if (!r) return;
+  $("dtitle").textContent = r.meta.title;
+  for (const b of document.querySelectorAll(".dtabs button")) b.classList.toggle("on", b.dataset.tab === dlgTab);
+  let html = "";
+  if (dlgTab === "in") {
+    if (!r.inputs.length) html = '<div class="muted" style="padding:12px 0">Code Pine này không có input.* nên chưa có gì để chỉnh.</div>';
+    let g = null;
+    for (const i of r.inputs) {
+      if (i.group !== g) { g = i.group; if (g) html += `<h5>${escH(g)}</h5>`; }
+      const v = i.val, d = `data-i="${i.id}"`;
+      let ctl;
+      if (i.type === "bool") ctl = `<input type="checkbox" ${d} ${v ? "checked" : ""}>`;
+      else if (i.type === "int" || i.type === "float") ctl = `<input type="number" ${d} value="${v}" ${i.min !== undefined ? `min="${i.min}"` : ""} ${i.max !== undefined ? `max="${i.max}"` : ""} step="${i.step || (i.type === "int" ? 1 : "any")}">`;
+      else if (i.type === "color" && /^#[0-9a-f]{6}/i.test(v)) ctl = `<input type="color" ${d} value="${v.slice(0, 7)}">`;
+      else if (i.type === "source") ctl = `<span class="muted" style="flex:none">cố định trong code</span>`;
+      else ctl = `<input type="text" ${d} value="${escH(v)}">`;
+      html += `<label class="drow"><span>${escH(i.title)}</span>${ctl}</label>`;
+    }
+  } else {
+    html += "<h5>Đường / biểu đồ</h5>";
+    if (!r.plots.length) html += '<div class="muted">Không có đường vẽ nào.</div>';
+    for (const p of r.plots) {
+      const st = cfg.styles[p.id] || {};
+      html += `<label class="drow"><input type="checkbox" data-p="${p.id}" data-k="show" ${st.show === false ? "" : "checked"}><span>${escH(p.title)}</span>` +
+        `<input type="color" data-p="${p.id}" data-k="color" value="${toHex(st.color || p.color)}">` +
+        `<select data-p="${p.id}" data-k="lw">${[1, 2, 3, 4].map(n => `<option ${(st.lw || p.lw | 0) === n ? "selected" : ""}>${n}</option>`).join("")}</select></label>`;
+    }
+    const feats = [["markers", "Mũi tên / tín hiệu (plotshape)", r.markers.length], ["labels", "Nhãn (label)", r.labels.length], ["lines", "Đường (line)", r.lines.length],
+      ["bg", "Nền màu (bgcolor)", r.bg.length], ["bar", "Màu nến (barcolor)", r.barColors.length], ["tables", "Bảng (table)", r.tables.length]].filter(f => f[2]);
+    if (feats.length) html += "<h5>Hiển thị</h5>" + feats.map(f => `<label class="drow"><span>${f[1]}</span><input type="checkbox" data-s="${f[0]}" ${cfg.show[f[0]] === false ? "" : "checked"}></label>`).join("");
+  }
+  $("dbody").innerHTML = html;
+}
+$("dbody").addEventListener("input", e => {
+  const t = e.target, D = t.dataset;
+  if (D.i !== undefined) {
+    const v = t.type === "checkbox" ? t.checked : t.type === "number" ? parseFloat(t.value) : t.value;
+    if (typeof v === "number" && !isFinite(v)) return;
+    cfg.inputs[D.i] = v;
+  } else if (D.p !== undefined) {
+    const st = cfg.styles[D.p] || (cfg.styles[D.p] = {});
+    st[D.k] = D.k === "show" ? t.checked : D.k === "lw" ? +t.value : t.value;
+  } else if (D.s !== undefined) cfg.show[D.s] = t.checked;
+  else return;
+  saveCfg(); clearTimeout(rerunT); rerunT = setTimeout(applyPine, 250);
+});
+for (const b of document.querySelectorAll(".dtabs button")) b.addEventListener("click", () => { dlgTab = b.dataset.tab; renderDlg(); });
+$("dreset").addEventListener("click", () => { const v = cfg.visible; cfg = newCfg(); cfg.visible = v; saveCfg(); applyPine(); renderDlg(); });
+$("dclose").addEventListener("click", () => { $("dlg").hidden = true; });
+$("dok").addEventListener("click", () => { $("dlg").hidden = true; });
+$("dlg").addEventListener("click", e => { if (e.target === $("dlg")) $("dlg").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("dlg").hidden = true; });
+
+/* thư viện chỉ báo */
+for (const k of Object.keys(window.PINELIB || {})) { const o = document.createElement("option"); o.value = o.textContent = k; $("plib").append(o); }
+$("plib").addEventListener("change", e => { const k = e.target.value; if (!k) return; $("psrc").value = window.PINELIB[k]; e.target.value = ""; runPine(); });
+
+function schedulePine() { if (!pineOn) return; clearTimeout(pineTimer); pineTimer = setTimeout(applyPine, 400); }
+const PM = window.PMVT || SAMPLES.ema;
+try { $("psrc").value = localStorage.getItem("pine_src2") || PM; } catch (_) { $("psrc").value = PM; }
+const runPine = () => { pineOn = true; alrBaseline = true; try { localStorage.setItem("pine_src2", $("psrc").value); } catch (_) {} loadCfg(); cfg.visible = true; applyPine(); };
+$("pineBtn").addEventListener("click", () => { const p = $("pine"); p.hidden = !p.hidden; $("pineBtn").classList.toggle("on", !p.hidden); setTimeout(fit, 0); });
+$("prun").addEventListener("click", runPine);
+$("pclr").addEventListener("click", () => { pineOn = false; clearPine(); lastRes = null; renderLegend(); $("pane").hidden = true; fit(); $("pmsg").className = ""; $("pmsg").textContent = "Đã gỡ chỉ báo."; });
+$("ppm").addEventListener("click", () => { $("psrc").value = PM; });
+$("pema").addEventListener("click", () => { $("psrc").value = SAMPLES.ema; });
+$("prsi").addEventListener("click", () => { $("psrc").value = SAMPLES.rsi; });
+$("psrc").addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "Enter") { e.preventDefault(); runPine(); }
+  if (e.key === "Tab") { e.preventDefault(); const t = e.target, s = t.selectionStart; t.value = t.value.slice(0, s) + "    " + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 4; }
+});
+
+/* ---------- xuất CSV khung đang xem ---------- */
+$("csvBtn").addEventListener("click", () => {
+  if (!bars.length) return;
+  const day = tfName === "Ngày";
+  const rows = [(day ? "Date" : "Datetime") + ",Open,High,Low,Close,Volume"];
+  for (const b of bars) {
+    const iso = new Date(b.time * 1000).toISOString();   // b.time đã cộng sẵn +7h
+    rows.push([day ? iso.slice(0, 10) : iso.slice(0, 16).replace("T", " "), b.open, b.high, b.low, b.close, b.vol ?? 0].join(","));
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
+  a.download = `${$("sym").textContent}_${day ? "1D" : tfName}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+/* ---------- Cảnh báo ---------- */
+const AK = "alr_v1";
+let ALR = { price: [], sound: true, notif: false, tg: false, token: "", chat: "", pine: true, muted: [] };
+try { Object.assign(ALR, JSON.parse(localStorage.getItem(AK) || "{}")); } catch (_) {}
+const alrSave = () => { try { localStorage.setItem(AK, JSON.stringify(ALR)); } catch (_) {} };
+let alrBaseline = true, prevPx = null, actx = null;
+const alrSeen = new Set(), pLines = new Map(), alog = [];
+const esc2 = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+document.addEventListener("click", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {} }, { once: true });
+function beep() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175, 880].forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.2;
+      o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+      g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+      o.start(t); o.stop(t + 0.18);
+    });
+  } catch (_) {}
+}
+function toast(title, body) {
+  const d = document.createElement("div"); d.className = "toast";
+  d.innerHTML = `<b>${esc2(title)}</b>${esc2(body)}`;
+  $("toasts").append(d); setTimeout(() => d.remove(), 9000);
+}
+function tg(text) {
+  if (!ALR.token || !ALR.chat) return Promise.resolve(false);
+  return fetch(`https://api.telegram.org/bot${ALR.token.trim()}/sendMessage?chat_id=${encodeURIComponent(ALR.chat.trim())}&text=${encodeURIComponent(text)}`)
+    .then(r => r.ok).catch(() => false);
+}
+function fire(title, body) {
+  const t = new Date().toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour12: false });
+  alog.unshift(`${t}  ${title}\n${body}`); alog.length = Math.min(alog.length, 30);
+  $("alog").innerHTML = alog.map(x => `<div>${esc2(x)}</div>`).join("");
+  toast(title, body);
+  if (ALR.sound) beep();
+  if (ALR.notif && "Notification" in window && Notification.permission === "granted") { try { new Notification(title, { body }); } catch (_) {} }
+  if (ALR.tg) tg(title + "\n" + body);
+  const o = document.title; document.title = "🔔 " + title; setTimeout(() => { document.title = o; }, 6000);
+}
+
+/* --- cảnh báo giá --- */
+function renderPrice() {
+  $("aplist").innerHTML = ALR.price.length
+    ? ALR.price.map(a => `<div class="ar"><span>${a.dir === "up" ? "↑ cắt lên" : "↓ cắt xuống"} <b>${fmt(a.price)}</b>${a.once ? " · 1 lần" : ""}</span><button data-id="${a.id}" title="Xóa">✕</button></div>`).join("")
+    : '<div class="muted">Chưa có cảnh báo giá.</div>';
+  for (const [id, l] of pLines) if (!ALR.price.some(a => a.id === id)) { try { cs.removePriceLine(l); } catch (_) {} pLines.delete(id); }
+  for (const a of ALR.price) if (!pLines.has(a.id)) pLines.set(a.id, cs.createPriceLine({ price: a.price, color: "#f5c518", lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "🔔" }));
+}
+function checkPrice(px) {
+  const pv = prevPx; prevPx = px;
+  if (pv === null || !ALR.price.length) return;
+  let changed = false;
+  for (const a of [...ALR.price]) {
+    const hit = a.dir === "up" ? (pv < a.price && px >= a.price) : (pv > a.price && px <= a.price);
+    if (!hit) continue;
+    fire("🔔 Cảnh báo giá", `${$("sym").textContent} ${a.dir === "up" ? "cắt lên" : "cắt xuống"} ${fmt(a.price)} · giá hiện tại ${fmt2(px)}`);
+    if (a.once) { ALR.price = ALR.price.filter(x => x !== a); changed = true; }
+  }
+  if (changed) { alrSave(); renderPrice(); }
+}
+$("apAdd").addEventListener("click", () => {
+  const v = parseFloat($("apPx").value);
+  if (!isFinite(v)) return;
+  ALR.price.push({ id: "p" + Date.now(), dir: $("apDir").value, price: v, once: $("apOnce").checked });
+  $("apPx").value = ""; alrSave(); renderPrice();
+});
+$("apNow").addEventListener("click", () => { if (prevPx !== null) $("apPx").value = prevPx; });
+$("aplist").addEventListener("click", e => { const id = e.target.dataset && e.target.dataset.id; if (id) { ALR.price = ALR.price.filter(a => a.id !== id); alrSave(); renderPrice(); } });
+
+/* --- cảnh báo chỉ báo / chiến lược (từ code Pine) --- */
+function handleAlerts(r) {
+  $("adefs").innerHTML = r.alertDefs.length
+    ? r.alertDefs.map(t => `<label><input type="checkbox" data-t="${esc2(t)}" ${ALR.muted.includes(t) ? "" : "checked"}> ${esc2(t)}</label>`).join("")
+    : "Code Pine này không có alertcondition / alert / strategy.entry.";
+  const base = alrBaseline || replayOn; alrBaseline = false;
+  for (const a of r.alerts) {
+    const k = a.title + "|" + a.time + "|" + a.msg;
+    if (alrSeen.has(k)) continue;
+    alrSeen.add(k);
+    if (base || !ALR.pine || ALR.muted.includes(a.title) || ALR.muted.includes(a.src === "str" ? "strategy.*" : "-")) continue;
+    fire((a.src === "str" ? "📈 " : "🔔 ") + a.title, `${a.msg} · ${$("sym").textContent} · ${tfName} · ${new Date(a.time * 1000).toISOString().slice(0, 16).replace("T", " ")}`);
+  }
+  if (alrSeen.size > 2000) alrSeen.clear();
+}
+$("adefs").addEventListener("change", e => {
+  const t = e.target.dataset && e.target.dataset.t; if (!t) return;
+  ALR.muted = e.target.checked ? ALR.muted.filter(x => x !== t) : [...ALR.muted, t]; alrSave();
+});
+
+/* --- cách nhận --- */
+$("aPine").checked = ALR.pine; $("aSound").checked = ALR.sound; $("aNotif").checked = ALR.notif; $("aTg").checked = ALR.tg;
+$("aTok").value = ALR.token; $("aChat").value = ALR.chat;
+$("aPine").addEventListener("change", e => { ALR.pine = e.target.checked; alrSave(); });
+$("aSound").addEventListener("change", e => { ALR.sound = e.target.checked; alrSave(); if (ALR.sound) beep(); });
+$("aNotif").addEventListener("change", e => {
+  ALR.notif = e.target.checked; alrSave();
+  if (ALR.notif && "Notification" in window) Notification.requestPermission().then(p => { if (p !== "granted") { toast("Thông báo trình duyệt", "Trình duyệt chưa cho phép thông báo (mở bằng file:// đôi khi bị chặn). Âm thanh và hộp thoại trong trang vẫn hoạt động."); } });
+});
+$("aTg").addEventListener("change", e => { ALR.tg = e.target.checked; alrSave(); });
+$("aTok").addEventListener("change", e => { ALR.token = e.target.value; alrSave(); });
+$("aChat").addEventListener("change", e => { ALR.chat = e.target.value; alrSave(); });
+$("aTest").addEventListener("click", async () => {
+  fire("🔔 Gửi thử", "Cảnh báo thử từ chart " + $("sym").textContent);
+  if (ALR.tg) { const ok = await tg("Gửi thử từ chart"); toast("Telegram", ok ? "Đã gửi." : "Gửi lỗi — kiểm tra token và Chat ID."); }
+});
+$("alrBtn").addEventListener("click", () => { const p = $("alr"); p.hidden = !p.hidden; $("alrBtn").classList.toggle("on", !p.hidden); setTimeout(fit, 0); });
+renderPrice();
+
+/* ---------- Bar Replay ---------- */
+let rLast = 0, rSel = false, rTimer = null;
+const ub = (a, t) => { let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m].t <= t) lo = m + 1; else hi = m; } return lo; };
+const rfmt = () => { const s = new Date((rLast + OFF) * 1000).toISOString(); return (TFS[tfName] >= 86400 ? s.slice(0, 10) : s.slice(0, 16).replace("T", " ")) + " (VN)"; };
+function rpause() { clearInterval(rTimer); rTimer = null; $("rplay").textContent = "▶"; }
+function rplay() {
+  if (rTimer) { rpause(); return; }
+  $("rplay").textContent = "⏸";
+  rTimer = setInterval(() => { if (!rstep()) rpause(); }, Math.max(33, 1000 / parseFloat($("rspd").value)));
+}
+function rstep() {                         // hiện thêm 1 nến của khung đang xem
+  if (!replayOn || rSel) return false;
+  const j = ub(full, rLast);
+  if (j >= full.length) { $("rtime").textContent = "Hết dữ liệu · " + rfmt(); return false; }
+  const tf = TFS[tfName], B2 = bucket(full[j].t, tf);
+  for (let k = j; k < full.length && bucket(full[k].t, tf) === B2; k++) {
+    const x = full[k]; onCandle([x.t, x.o, x.h, x.l, x.c, x.v], true); rLast = x.t;
+  }
+  $("rtime").textContent = rfmt();
+  return true;
+}
+function rEnter() {
+  replayOn = true; rSel = true;
+  $("rpl").hidden = false; $("rplBtn").classList.add("on");
+  $("rplay").disabled = $("rstep").disabled = true;
+  $("rtime").textContent = "Bấm vào 1 nến trên chart để bắt đầu";
+  $("chart").style.cursor = "crosshair";
+}
+function rStartAt(time) {                  // time = thời gian nến (đã +7h)
+  const cut = time - OFF + TFS[tfName] - 1, rk = ub(full, cut);
+  if (rk < 2) return;
+  if (rk >= full.length) { $("rtime").textContent = "Chọn nến sớm hơn nến cuối"; return; }
+  rpause();
+  m1 = full.slice(0, rk); rLast = m1[rk - 1].t; rSel = false;
+  $("chart").style.cursor = "";
+  $("rplay").disabled = $("rstep").disabled = false;
+  $("rtime").textContent = rfmt();
+  aggregate(); draw(true);
+}
+function rExit() {
+  rpause(); replayOn = false; rSel = false;
+  $("rpl").hidden = true; $("rplBtn").classList.remove("on"); $("chart").style.cursor = "";
+  m1 = full; alrBaseline = true; aggregate(); draw(true);
+}
+$("rplBtn").addEventListener("click", () => { if (replayOn) rExit(); else rEnter(); });
+$("rexit").addEventListener("click", rExit);
+$("rsel").addEventListener("click", () => {      // chọn lại điểm bắt đầu: hiện lại toàn bộ dữ liệu
+  rpause(); rSel = true; m1 = full; aggregate(); draw(false);
+  $("rplay").disabled = $("rstep").disabled = true;
+  $("rtime").textContent = "Bấm vào 1 nến trên chart để bắt đầu"; $("chart").style.cursor = "crosshair";
+});
+$("rplay").addEventListener("click", rplay);
+$("rstep").addEventListener("click", () => { rpause(); rstep(); });
+$("rspd").addEventListener("change", () => { if (rTimer) { rpause(); rplay(); } });
+chart.subscribeClick(p => { if (replayOn && rSel && p && p.time) rStartAt(p.time); });
+document.addEventListener("keydown", e => {
+  if (!replayOn || rSel || /INPUT|TEXTAREA|SELECT/.test((e.target.tagName || ""))) return;
+  if (e.key === "ArrowRight") { e.preventDefault(); rpause(); rstep(); }
+  else if (e.key === " ") { e.preventDefault(); rplay(); }
+});
+
+/* ---------- Footprint (ước lượng từ tick của server) ---------- */
+const fpm = new Map();            // phút (epoch) -> { "1234.5": [mua, bán] }
+let fpGot = false, wsUp = false, fpVer = 0, fpOn = false, fpCache = null, fpKey = "";
+function fpLoad(arr) { fpGot = true; fpm.clear(); for (const [t, rows] of arr) fpm.set(t, rows); fpVer++; }
+function fpAdd(d) {
+  let r = fpm.get(d.t); if (!r) { r = {}; fpm.set(d.t, r); }
+  const x = r[d.p] || (r[d.p] = [0, 0]); x[0] += d.b; x[1] += d.s; fpVer++;
+}
+function fpBars() {               // gộp theo khung đang xem + cỡ hàng giá
+  const row = parseFloat($("fpRow").value), tf = TFS[tfName], key = tf + "|" + row + "|" + fpVer;
+  if (key === fpKey) return fpCache;
+  const m = new Map();
+  for (const [t, rows] of fpm) {
+    const bt = bucket(t, tf); let o = m.get(bt); if (!o) { o = new Map(); m.set(bt, o); }
+    for (const p in rows) {
+      const rp = Math.round(Math.floor(parseFloat(p) / row + 1e-9) * row * 100) / 100;
+      const x = o.get(rp) || [0, 0]; x[0] += rows[p][0]; x[1] += rows[p][1]; o.set(rp, x);
+    }
+  }
+  fpKey = key; return (fpCache = m);
+}
+function drawFp() {
+  if (!fpOn) return;
+  const cv = $("fp"), ts = chart.timeScale();
+  const W = Math.max(0, $("chart").clientWidth - chart.priceScale("right").width()), H = Math.max(0, $("chart").clientHeight - ts.height());
+  const dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px"; }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  if (!fpm.size) {
+    const lines = !wsUp ? ["Chưa kết nối server (" + WS_URL + ")", "Chạy chay.bat trên PC, chạm chấm tròn góc trên để đổi địa chỉ"]
+      : !fpGot ? ["Server không gửi dữ liệu footprint → đang chạy ticker_server.py BẢN CŨ", "Tắt cửa sổ server, chép đè ticker_server.py bản mới rồi chạy lại"]
+      : ["Server đã sẵn sàng nhưng chưa ghi được lệnh nào", "Footprint chỉ ghi khi thị trường mở (phái sinh 9:00–14:45, T2–T6) và KLGD thay đổi"];
+    g.fillStyle = "#8a8a93"; g.textAlign = "center"; g.font = "13px sans-serif";
+    lines.forEach((t, k) => g.fillText(t, W / 2, 60 + k * 20));
+    return;
+  }
+  const lr = ts.getVisibleLogicalRange(); if (!lr || !bars.length) return;
+  const row = parseFloat($("fpRow").value), data = fpBars();
+  const sp = ts.logicalToCoordinate(1) - ts.logicalToCoordinate(0);
+  if (!isFinite(sp) || sp <= 0) return;
+  const cw = Math.max(2, sp * 0.92), big = cw >= 46;
+  const i0 = Math.max(0, Math.floor(lr.from) - 1), i1 = Math.min(bars.length - 1, Math.ceil(lr.to) + 1);
+  g.textBaseline = "middle";
+  for (let i = i0; i <= i1; i++) {
+    const o = data.get(bars[i].time); if (!o) continue;
+    const x = ts.timeToCoordinate(bars[i].time); if (x === null) continue;
+    const x0 = x - cw / 2, rows = [...o.entries()].sort((a, b) => a[0] - b[0]);
+    let maxC = 1, poc = null, pocV = -1, B = 0, S = 0;
+    for (const [rp, v] of rows) { maxC = Math.max(maxC, v[0], v[1]); B += v[0]; S += v[1]; if (v[0] + v[1] > pocV) { pocV = v[0] + v[1]; poc = rp; } }
+    let lowY = null;
+    for (const [rp, v] of rows) {
+      const yHi = cs.priceToCoordinate(rp + row), yLo = cs.priceToCoordinate(rp);
+      if (yHi === null || yLo === null) continue;
+      const top = Math.min(yHi, yLo), h = Math.max(1, Math.abs(yLo - yHi) - 1);
+      if (top > H + 20 || top + h < -20) continue;
+      lowY = Math.max(lowY === null ? -1e9 : lowY, top + h);
+      g.fillStyle = `rgba(239,45,74,${0.1 + 0.6 * v[1] / maxC})`; g.fillRect(x0, top, cw / 2, h);
+      g.fillStyle = `rgba(34,197,94,${0.1 + 0.6 * v[0] / maxC})`; g.fillRect(x + 0, top, cw / 2, h);
+      if (rp === poc) { g.strokeStyle = "#f5c518"; g.lineWidth = 1.5; g.strokeRect(x0, top, cw, h); }
+      if (big && h >= 10) {
+        const below = o.get(Math.round((rp - row) * 100) / 100), above = o.get(Math.round((rp + row) * 100) / 100);
+        const buyImb = below && v[0] >= 5 && v[0] >= 3 * below[1], sellImb = above && v[1] >= 5 && v[1] >= 3 * above[0];
+        g.font = `${Math.min(11, Math.floor(h))}px sans-serif`;
+        g.textAlign = "right"; g.fillStyle = sellImb ? "#ff7a8c" : "#e6e6ea"; g.fillText(v[1], x - 3, top + h / 2);
+        g.textAlign = "left"; g.fillStyle = buyImb ? "#6ee79a" : "#e6e6ea"; g.fillText(v[0], x + 3, top + h / 2);
+      }
+    }
+    if (lowY !== null && cw >= 30) {
+      const d = B - S;
+      g.font = "bold 11px sans-serif"; g.textAlign = "center";
+      g.fillStyle = d >= 0 ? "#22c55e" : "#ef2d4a"; g.fillText("Δ " + (d > 0 ? "+" : "") + d, x, lowY + 10);
+      g.fillStyle = "#8a8a93"; g.font = "10px sans-serif"; g.fillText(B + S, x, lowY + 22);
+    }
+  }
+}
+function fpSet(on) {
+  fpOn = on; $("fp").hidden = !on; $("fpRow").hidden = !on; $("fpCsv").hidden = !on; $("fpBtn").classList.toggle("on", on);
+  const a = on ? ".12" : null;
+  cs.applyOptions(on ? { upColor: "rgba(34,197,94,.12)", downColor: "rgba(239,45,74,.12)" } : { upColor: UP, downColor: DOWN });
+  vs.applyOptions({ visible: !on });
+  if (on) { chart.timeScale().applyOptions({ barSpacing: 80 }); setTimeout(drawFp, 50); }
+}
+$("fpBtn").addEventListener("click", () => fpSet(!fpOn));
+$("fpRow").addEventListener("change", drawFp);
+$("fpCsv").addEventListener("click", () => {
+  const data = fpBars(), out = ["Time,Price,Buy,Sell,Delta,Volume"];
+  for (const b of bars) {
+    const o = data.get(b.time); if (!o) continue;
+    const iso = new Date(b.time * 1000).toISOString(), tm = TFS[tfName] >= 86400 ? iso.slice(0, 10) : iso.slice(0, 16).replace("T", " ");
+    for (const [p, v] of [...o.entries()].sort((a, c) => a[0] - c[0])) out.push([tm, p, v[0], v[1], v[0] - v[1], v[0] + v[1]].join(","));
+  }
+  if (out.length < 2) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([out.join("\n")], { type: "text/csv" }));
+  a.download = `${$("sym").textContent}_footprint_${tfName === "Ngày" ? "1D" : tfName}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+});
+chart.timeScale().subscribeVisibleLogicalRangeChange(drawFp);
+setInterval(drawFp, 150);
+
+/* ---------- kết nối WebSocket ---------- */
+const setDot = s => { $("dot").className = "dot " + (s || ""); };
+function connect() {
+  const ws = new WebSocket(WS_URL);
+  ws.onopen = () => { wsUp = true; setDot("live"); ws.send(JSON.stringify({ cmd: "history" })); ws.send(JSON.stringify({ cmd: "fp" })); };
+  ws.onmessage = e => {
+    let d; try { d = JSON.parse(e.data); } catch (_) { return; }
+    if (d.type === "history") {
+      const arr = d.candles.map(([t, o, h, l, c, v]) => ({ t, o, h, l, c, v }));
+      full = arr;
+      if (!replayOn) { m1 = arr; aggregate(); draw(true); }
+    } else if (d.type === "fphistory") fpLoad(d.data);
+    else if (d.type === "fp") fpAdd(d);
+    else if (d.type === "candle") onCandle(d.c);
+    else onTick(d);
+  };
+  ws.onerror = () => setDot("err");
+  ws.onclose = () => { wsUp = false; setDot("err"); setTimeout(connect, 3000); };
+}
+connect();
+</script>
+</body>
+</html>
